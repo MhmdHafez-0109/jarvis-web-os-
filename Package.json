@@ -1,0 +1,17 @@
+{
+  "name": "jarvis-web-os",
+  "version": "1.0.0",
+  "description": "JARVIS Web OS — AI command hub, tool radar, and LinkedIn studio powered by GLM.",
+  "type": "module",
+  "main": "server.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "openai": "^4.67.0"
+  }
+}
