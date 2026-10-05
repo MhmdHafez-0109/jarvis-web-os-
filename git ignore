@@ -1,0 +1,18 @@
+# المكتبات — Render سيثبتها بنفسه عند البناء
+node_modules/
+
+# ملفات النظام
+.DS_Store
+Thumbs.db
+
+# ملفات البيئة (تحتوي على مفاتيح سرية)
+.env
+.env.local
+
+# السجلات
+*.log
+npm-debug.log*
+
+# ملفات المحرر
+.vscode/
+.idea/
