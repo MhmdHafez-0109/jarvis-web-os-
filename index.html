@@ -505,4 +505,783 @@ body::before{
 <body>
 
 <!-- ══════════════════ HEADER ══════════════════ -->
-<header class="hud-header"
+<header class="hud-header">
+  <div class="brand">
+    <div class="brand-mark">J</div>
+    <div class="brand-text">
+      <h1>JARVIS</h1>
+      <small>WEB OS · GLM</small>
+    </div>
+  </div>
+
+  <div class="status-strip" id="statusStrip">
+    <span class="status" data-svc="core"><i class="led"></i> CORE</span>
+    <span class="status" data-svc="glm"><i class="led"></i> GLM</span>
+    <span class="status" data-svc="newsRss"><i class="led"></i> NEWS RSS</span>
+    <span class="status" data-svc="linkedin"><i class="led"></i> LINKEDIN</span>
+  </div>
+
+  <div class="clock">
+    <span id="clockTime">--:--:--</span>
+    <span class="clock-tz" id="clockDate">BOOT</span>
+  </div>
+</header>
+
+<!-- ══════════════════ MAIN ══════════════════ -->
+<main class="hud-grid">
+
+  <!-- COMMAND HUB -->
+  <section class="panel command-panel">
+    <div class="panel-head">
+      <h2><span class="dot"></span> COMMAND HUB</h2>
+      <span class="panel-meta" id="engineLabel">IDLE</span>
+    </div>
+
+    <div class="stream" id="stream">
+      <div class="msg jarvis">
+        <div class="avatar">J</div>
+        <div class="bubble markdown">
+          <h3>Systems online.</h3>
+          <p>I'm <strong>JARVIS</strong> — running on <strong>GLM</strong>.</p>
+          <ul>
+            <li><strong>Command Hub</strong> — type or speak; I stream live.</li>
+            <li><strong>AI Radar</strong> — daily discovery of emerging tools.</li>
+            <li><strong>LinkedIn Studio</strong> — drafted posts, ready to dispatch.</li>
+          </ul>
+          <p>Try: <em>"Discover today's AI tools"</em> or tap the mic.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="chip-row" id="chipRow">
+      <button class="chip" data-cmd="Discover today's top AI tools and summarise the standout one.">⚡ Discover AI Tools</button>
+      <button class="chip" data-cmd="Give me a 5-point morning tech briefing.">📡 Tech Briefing</button>
+      <button class="chip" data-cmd="What should I automate in my workflow this week?">🤖 Automation Ideas</button>
+      <button class="chip" data-cmd="Explain multi-agent orchestration in 4 bullet points.">🧠 Multi-Agent 101</button>
+    </div>
+
+    <div class="command-bar">
+      <button class="mic-btn" id="micBtn" aria-label="Voice input">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="2.5" width="6" height="11" rx="3"></rect>
+          <path d="M5.5 11a6.5 6.5 0 0 0 13 0"></path>
+          <path d="M12 17.5V21"></path><path d="M8.5 21h7"></path>
+        </svg>
+        <span class="mic-ring"></span>
+      </button>
+
+      <textarea id="commandInput" rows="1" placeholder="Issue a command…"
+                autocomplete="off" spellcheck="false"></textarea>
+
+      <button class="send-btn" id="sendBtn">
+        <span>SEND</span>
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 12h15"></path><path d="M13 6l6 6-6 6"></path>
+        </svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- TABS: RADAR + STUDIO -->
+  <section class="panel tabs-panel">
+    <div class="tab-bar">
+      <button class="tab active" data-tab="radar">◎ AI RADAR</button>
+      <button class="tab" data-tab="studio">in LINKEDIN STUDIO</button>
+    </div>
+
+    <div class="tab-pane active" id="pane-radar">
+      <div class="pane-toolbar">
+        <span class="panel-meta" id="radarMeta">AWAITING SCAN</span>
+        <button class="btn-primary" id="refreshTools">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+               stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-3-6.7"></path><path d="M21 3v6h-6"></path>
+          </svg>
+          FETCH NEW TOOLS
+        </button>
+      </div>
+      <div class="scroll-area" id="toolList">
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="pane-studio">
+      <div class="pane-toolbar">
+        <span class="panel-meta" id="studioMeta">0 DRAFTS</span>
+        <button class="btn-ghost" id="exportDrafts" title="Download all drafts as .txt">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
+               stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v12"></path><path d="M7 10l5 5 5-5"></path>
+            <path d="M5 21h14"></path>
+          </svg>
+          EXPORT ALL
+        </button>
+        <button class="btn-primary" id="generateDrafts">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+               stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v4M12 17v4M3 12h4M17 12h4"></path><circle cx="12" cy="12" r="3.2"></circle>
+          </svg>
+          GENERATE DRAFTS
+        </button>
+      </div>
+      <div class="scroll-area" id="draftList">
+        <div class="empty-state">
+          <div class="empty-icon">✍</div>
+          <p>No drafts yet.</p>
+          <span>Run an AI Radar scan, then hit <strong>Generate Drafts</strong>.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOG TERMINAL -->
+  <section class="panel log-panel">
+    <div class="panel-head">
+      <h2><span class="dot amber"></span> EXECUTION LOG</h2>
+      <button class="btn-ghost" id="clearLogs">CLEAR</button>
+    </div>
+    <div class="log-stream" id="logStream"></div>
+    <div class="log-foot">
+      <span id="logCount">0 EVENTS</span>
+      <span class="live-dot"><i></i> STREAMING</span>
+    </div>
+  </section>
+
+</main>
+
+<div class="toast-stack" id="toastStack"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   JARVIS Web OS — Frontend
+   ═══════════════════════════════════════════════════════ */
+const $ = (s) => document.querySelector(s);
+
+const streamEl    = $('#stream');
+const inputEl     = $('#commandInput');
+const sendBtn     = $('#sendBtn');
+const micBtn      = $('#micBtn');
+const logStream   = $('#logStream');
+const logCountEl  = $('#logCount');
+const toolList    = $('#toolList');
+const draftList   = $('#draftList');
+const radarMeta   = $('#radarMeta');
+const studioMeta  = $('#studioMeta');
+const engineLabel = $('#engineLabel');
+
+let logEvents    = 0;
+let currentTools = [];
+let busy         = false;
+
+/* ─────────── Utils ─────────── */
+const esc = (s) => String(s ?? '')
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
+function toast(msg, kind = '') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + kind;
+  el.textContent = msg;
+  $('#toastStack').appendChild(el);
+  setTimeout(() => {
+    el.style.transition = 'opacity .3s, transform .3s';
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(10px)';
+    setTimeout(() => el.remove(), 320);
+  }, 3600);
+}
+
+/* نسخ نص إلى الحافظة — يدعم iOS/Android القديمة */
+async function copyText(text) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;top:-9999px;opacity:0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand('copy');
+    ta.remove();
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+/* تنزيل ملف نصي */
+function downloadText(filename, content) {
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/* ─────────── Markdown ─────────── */
+function inlineFmt(s) {
+  return s
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+}
+
+function renderMarkdown(md) {
+  const lines = esc(md).split('\n');
+  const out = [];
+  let inList = false, inCode = false, codeBuf = [];
+
+  const closeList = () => { if (inList) { out.push('</ul>'); inList = false; } };
+
+  for (const line of lines) {
+    if (line.trim().startsWith('```')) {
+      closeList();
+      if (inCode) { out.push(`<pre><code>${codeBuf.join('\n')}</code></pre>`); codeBuf = []; inCode = false; }
+      else inCode = true;
+      continue;
+    }
+    if (inCode) { codeBuf.push(line); continue; }
+
+    const li = line.match(/^\s*(?:[-*]|\d+\.)\s+(.*)$/);
+    if (li) {
+      if (!inList) { out.push('<ul>'); inList = true; }
+      out.push(`<li>${inlineFmt(li[1])}</li>`);
+      continue;
+    }
+    closeList();
+
+    const h = line.match(/^(#{1,3})\s+(.*)$/);
+    if (h) { out.push(`<h${h[1].length}>${inlineFmt(h[2])}</h${h[1].length}>`); continue; }
+
+    if (line.startsWith('&gt; ')) { out.push(`<blockquote>${inlineFmt(line.slice(5))}</blockquote>`); continue; }
+
+    if (line.trim() === '') { out.push(''); continue; }
+
+    out.push(`<p>${inlineFmt(line)}</p>`);
+  }
+  closeList();
+  if (inCode) out.push(`<pre><code>${codeBuf.join('\n')}</code></pre>`);
+  return out.join('\n');
+}
+
+/* ─────────── Chat ─────────── */
+function addUserMessage(text) {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg user';
+  wrap.innerHTML = `<div class="avatar">YOU</div><div class="bubble">${esc(text)}</div>`;
+  streamEl.appendChild(wrap);
+  streamEl.scrollTop = streamEl.scrollHeight;
+}
+
+function addJarvisBubble() {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg jarvis';
+  wrap.innerHTML = `<div class="avatar">J</div><div class="bubble markdown dim">…</div>`;
+  streamEl.appendChild(wrap);
+  streamEl.scrollTop = streamEl.scrollHeight;
+  return wrap;
+}
+
+async function sendCommand(text) {
+  const message = (text ?? inputEl.value).trim();
+  if (!message || busy) return;
+
+  addUserMessage(message);
+  inputEl.value = '';
+  autoResize();
+
+  const wrap   = addJarvisBubble();
+  const bubble = wrap.querySelector('.bubble');
+  bubble.classList.remove('dim');
+
+  busy = true;
+  engineLabel.textContent = 'STREAMING';
+  sendBtn.disabled = true;
+
+  let full = '', raf = null;
+  const paint = () => {
+    bubble.innerHTML = renderMarkdown(full);
+    streamEl.scrollTop = streamEl.scrollHeight;
+    raf = null;
+  };
+
+  try {
+    const res = await fetch('/api/jarvis/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message }),
+    });
+
+    if (!res.ok || !res.body) throw new Error('HTTP ' + res.status);
+
+    const reader  = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      const parts = buffer.split('\n\n');
+      buffer = parts.pop() || '';
+
+      for (const part of parts) {
+        const line = part.trim();
+        if (!line.startsWith('data:')) continue;
+        const raw = line.slice(5).trim();
+        if (!raw) continue;
+
+        let evt;
+        try { evt = JSON.parse(raw); } catch { continue; }
+
+        if (evt.type === 'delta') {
+          full += evt.content;
+          if (!raf) raf = requestAnimationFrame(paint);
+        } else if (evt.type === 'error') {
+          full += `\n\n> ⚠️ **Error:** ${evt.message}`;
+          if (!raf) raf = requestAnimationFrame(paint);
+        }
+      }
+    }
+
+    if (raf) cancelAnimationFrame(raf);
+    if (!full) full = '_No response received._';
+    paint();
+  } catch (err) {
+    bubble.innerHTML = renderMarkdown(`> ⚠️ **Connection error:** ${err.message}`);
+  } finally {
+    busy = false;
+    sendBtn.disabled = false;
+    engineLabel.textContent = 'IDLE';
+    streamEl.scrollTop = streamEl.scrollHeight;
+  }
+}
+
+/* ─────────── AI Radar ─────────── */
+function renderTools(tools) {
+  toolList.innerHTML = '';
+  if (!tools.length) {
+    toolList.innerHTML = `<div class="empty-state"><div class="empty-icon">◎</div><p>No tools found.</p></div>`;
+    return;
+  }
+
+  tools.forEach((t, i) => {
+    const card = document.createElement('article');
+    card.className = 'tool-card';
+    card.style.animationDelay = (i * 60) + 'ms';
+    card.innerHTML = `
+      <div class="tool-top">
+        <div>
+          <div class="tool-name">${esc(t.name)}</div>
+          <span class="tool-cat">${esc(t.category)}</span>
+        </div>
+        <div class="impact"><b>${esc(t.impact)}</b><span>IMPACT</span></div>
+      </div>
+      <p class="tool-feat">${esc(t.features)}</p>
+      <div class="tool-meta">
+        <span class="pill">👥 ${esc(t.audience)}</span>
+        <span class="pill">💳 ${esc(t.price)}</span>
+      </div>`;
+    toolList.appendChild(card);
+  });
+}
+
+async function fetchTools() {
+  radarMeta.textContent = 'SCANNING…';
+  toolList.innerHTML = '<div class="skeleton-card"></div>'.repeat(3);
+
+  try {
+    const res  = await fetch('/api/tools/discover');
+    const data = await res.json();
+    currentTools = data.tools || [];
+    renderTools(currentTools);
+    radarMeta.textContent = `${currentTools.length} TOOLS · ${new Date(data.generatedAt).toLocaleTimeString()}`;
+  } catch (err) {
+    toolList.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠</div><p>Scan failed</p><span>${esc(err.message)}</span></div>`;
+    radarMeta.textContent = 'SCAN FAILED';
+    toast('Radar scan failed', 'err');
+  }
+}
+
+/* ─────────── LinkedIn Studio ─────────── */
+function makeBtn(label, cls) {
+  const b = document.createElement('button');
+  b.className = cls;
+  b.type = 'button';
+  b.textContent = label;
+  return b;
+}
+
+async function dispatch(content, scheduledAt, btn) {
+  if (!content.trim()) { toast('Draft is empty', 'err'); return; }
+  if (content.length > 3000) { toast('Post exceeds 3000 characters', 'err'); return; }
+
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'SENDING…';
+
+  try {
+    const res  = await fetch('/api/linkedin/post', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content, scheduledAt }),
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      toast(data.mock ? '✓ Dispatched (mock mode)' : '✓ Published to LinkedIn', 'ok');
+      btn.textContent = data.mock ? 'MOCK SENT' : 'POSTED';
+    } else {
+      throw new Error(data.error || 'Dispatch failed');
+    }
+  } catch (err) {
+    toast('Dispatch failed: ' + err.message, 'err');
+    btn.textContent = original;
+  } finally {
+    setTimeout(() => { btn.disabled = false; }, 2500);
+  }
+}
+
+function renderDrafts(drafts) {
+  draftList.innerHTML = '';
+  if (!drafts.length) {
+    draftList.innerHTML = `<div class="empty-state"><div class="empty-icon">✍</div><p>No drafts generated.</p></div>`;
+    return;
+  }
+
+  drafts.forEach((d, i) => {
+    const card = document.createElement('article');
+    card.className = 'draft-card';
+    card.style.animationDelay = (i * 70) + 'ms';
+
+    const head = document.createElement('header');
+    head.className = 'draft-head';
+    head.innerHTML = `<span class="draft-index">DRAFT ${String(i + 1).padStart(2, '0')}</span>
+                      <span class="draft-tool">${esc(d.tool || 'AI Tool')}</span>`;
+
+    const ta = document.createElement('textarea');
+    ta.className = 'draft-body';
+    ta.value = d.content || '';
+    ta.readOnly = true;
+    ta.spellcheck = true;
+
+    const tags = document.createElement('div');
+    tags.className = 'draft-tags';
+    (d.hashtags || []).forEach(h => {
+      const b = document.createElement('button');
+      b.className = 'tag';
+      b.type = 'button';
+      b.textContent = '#' + h;
+      b.onclick = () => {
+        const tag = ' #' + h;
+        if (!ta.value.includes(tag)) ta.value += tag;
+        updateCount();
+      };
+      tags.appendChild(b);
+    });
+
+    const foot   = document.createElement('footer');
+    foot.className = 'draft-foot';
+    const count  = document.createElement('span');
+    count.className = 'charcount';
+
+    const actions  = document.createElement('div');
+    actions.className = 'draft-actions';
+
+    /* زر نسخ سريع */
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'icon-btn';
+    copyBtn.type = 'button';
+    copyBtn.title = 'Copy to clipboard';
+    copyBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+        <path d="M5 15V5a2 2 0 0 1 2-2h10"></path>
+      </svg>`;
+    copyBtn.onclick = async () => {
+      const ok = await copyText(ta.value);
+      if (ok) {
+        copyBtn.classList.add('done');
+        copyBtn.innerHTML = `
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+               stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12.5l4.5 4.5L19 7"></path>
+          </svg>`;
+        toast('✓ Copied to clipboard', 'ok');
+        setTimeout(() => {
+          copyBtn.classList.remove('done');
+          copyBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+              <path d="M5 15V5a2 2 0 0 1 2-2h10"></path>
+            </svg>`;
+        }, 2000);
+      } else {
+        toast('Copy failed — long-press to select manually', 'err');
+      }
+    };
+
+    const editBtn  = makeBtn('EDIT DRAFT', 'btn-ghost');
+    const schedBtn = makeBtn('SCHEDULE', 'btn-ghost');
+    const postBtn  = makeBtn('APPROVE & POST', 'btn-primary');
+
+    editBtn.onclick = () => {
+      ta.readOnly = !ta.readOnly;
+      editBtn.textContent = ta.readOnly ? 'EDIT DRAFT' : 'LOCK DRAFT';
+      if (!ta.readOnly) ta.focus();
+    };
+
+    schedBtn.onclick = () => dispatch(ta.value, new Date(Date.now() + 864e5).toISOString(), schedBtn);
+    postBtn.onclick  = () => dispatch(ta.value, null, postBtn);
+
+    actions.append(copyBtn, editBtn, schedBtn, postBtn);
+    foot.append(count, actions);
+    card.append(head, ta, tags, foot);
+    draftList.appendChild(card);
+
+    const updateCount = () => {
+      const n = ta.value.length;
+      count.textContent = `${n} / 3000`;
+      count.classList.toggle('over', n > 3000);
+    };
+    ta.addEventListener('input', updateCount);
+    updateCount();
+  });
+}
+
+async function generateDrafts() {
+  if (!currentTools.length) {
+    toast('Run an AI Radar scan first', 'err');
+    switchTab('radar');
+    return;
+  }
+
+  studioMeta.textContent = 'GENERATING…';
+  draftList.innerHTML = '<div class="skeleton-card"></div>'.repeat(2);
+
+  try {
+    const res  = await fetch('/api/linkedin/draft', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tools: currentTools.slice(0, 3) }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Generation failed');
+
+    renderDrafts(data.drafts || []);
+    studioMeta.textContent = `${data.count} DRAFTS`;
+    toast(`✓ ${data.count} draft(s) generated`, 'ok');
+  } catch (err) {
+    draftList.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠</div><p>Generation failed</p><span>${esc(err.message)}</span></div>`;
+    studioMeta.textContent = '0 DRAFTS';
+    toast('Draft generation failed', 'err');
+  }
+}
+
+/* ─────────── Export drafts ─────────── */
+function buildExportPayload() {
+  const cards = draftList.querySelectorAll('.draft-card');
+  if (!cards.length) return null;
+
+  const lines = [
+    '════════════════════════════════════════',
+    '  JARVIS · LinkedIn Drafts Export',
+    '  ' + new Date().toLocaleString('en-GB', { hour12: false }),
+    '════════════════════════════════════════',
+    '',
+  ];
+
+  const drafts = [];
+
+  cards.forEach((card, i) => {
+    const tool    = card.querySelector('.draft-tool')?.textContent.trim() || 'AI Tool';
+    const ta      = card.querySelector('.draft-body');
+    const content = (ta?.value || '').trim();
+    const tags    = [...card.querySelectorAll('.tag')].map(t => t.textContent.trim());
+
+    lines.push(`───── DRAFT ${String(i + 1).padStart(2, '0')} · ${tool} ─────`);
+    lines.push('');
+    lines.push(content);
+    lines.push('');
+    if (tags.length) lines.push('Suggested hashtags: ' + tags.join(' '));
+    lines.push('');
+    lines.push(`Characters: ${content.length} / 3000`);
+    lines.push('');
+    lines.push('');
+
+    drafts.push({ index: i + 1, tool, content, hashtags: tags, chars: content.length });
+  });
+
+  lines.push('════════════════════════════════════════');
+  lines.push(`Total drafts: ${drafts.length}`);
+  lines.push('════════════════════════════════════════');
+
+  return { text: lines.join('\n'), drafts };
+}
+
+/* ─────────── Logs (SSE) ─────────── */
+function pushLog(entry) {
+  const line = document.createElement('div');
+  line.className = 'log-line ' + (entry.level || 'info');
+  const t = new Date(entry.ts).toLocaleTimeString('en-GB', { hour12: false });
+  line.innerHTML = `<span class="log-time">${t}</span>
+                    <span class="log-src">[${esc(entry.source)}]</span>
+                    <span class="log-msg">${esc(entry.message)}</span>`;
+  logStream.appendChild(line);
+  logStream.scrollTop = logStream.scrollHeight;
+
+  logEvents++;
+  logCountEl.textContent = logEvents + ' EVENT' + (logEvents === 1 ? '' : 'S');
+
+  while (logStream.children.length > 300) logStream.removeChild(logStream.firstChild);
+}
+
+function attachLogs() {
+  const es = new EventSource('/api/logs');
+  es.onmessage = (e) => { try { pushLog(JSON.parse(e.data)); } catch {} };
+  es.onerror   = () => { /* المتصفح يعيد الاتصال تلقائياً */ };
+}
+
+/* ─────────── Health / Status ─────────── */
+async function refreshHealth() {
+  try {
+    const res = await fetch('/api/health');
+    const h   = await res.json();
+
+    const set = (svc, state) => {
+      const el = document.querySelector(`.status[data-svc="${svc}"]`);
+      if (!el) return;
+      el.classList.remove('ok', 'warn', 'off');
+      el.classList.add(state);
+    };
+
+    set('core',     h.core === 'online' ? 'ok' : 'off');
+    set('glm',      h.glm === 'ready' ? 'ok' : 'off');
+    set('newsRss',  'warn');
+    set('linkedin', h.linkedin === 'ready' ? 'ok' : 'warn');
+  } catch {
+    document.querySelectorAll('.status').forEach(el => {
+      el.classList.remove('ok', 'warn'); el.classList.add('off');
+    });
+  }
+}
+
+/* ─────────── Tabs ─────────── */
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.tab-pane').forEach(p =>
+    p.classList.toggle('active', p.id === 'pane-' + name));
+}
+
+/* ─────────── Voice Input ─────────── */
+function initMic() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    micBtn.addEventListener('click', () => toast('Voice input not supported in this browser', 'err'));
+    return;
+  }
+
+  const rec = new SR();
+  rec.continuous = false;
+  rec.interimResults = true;
+  rec.lang = navigator.language || 'en-US';
+
+  let listening = false;
+
+  rec.onstart  = () => { listening = true;  micBtn.classList.add('rec');    engineLabel.textContent = 'LISTENING'; };
+  rec.onend    = () => { listening = false; micBtn.classList.remove('rec'); engineLabel.textContent = 'IDLE'; };
+  rec.onerror  = (e) => { toast('Mic error: ' + e.error, 'err'); };
+
+  rec.onresult = (e) => {
+    let text = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) text += e.results[i][0].transcript;
+    inputEl.value = text;
+    autoResize();
+    if (e.results[e.results.length - 1].isFinal) {
+      setTimeout(() => sendCommand(text), 180);
+    }
+  };
+
+  micBtn.addEventListener('click', () => {
+    if (listening) rec.stop();
+    else { inputEl.value = ''; autoResize(); rec.start(); }
+  });
+}
+
+/* ─────────── Textarea auto-resize ─────────── */
+function autoResize() {
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 130) + 'px';
+}
+
+/* ─────────── Clock ─────────── */
+function tickClock() {
+  const d = new Date();
+  $('#clockTime').textContent = d.toLocaleTimeString('en-GB', { hour12: false });
+  $('#clockDate').textContent = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase();
+}
+
+/* ─────────── Bindings ─────────── */
+sendBtn.addEventListener('click', () => sendCommand());
+
+inputEl.addEventListener('input', autoResize);
+inputEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendCommand();
+  }
+});
+
+document.querySelectorAll('.chip').forEach(c =>
+  c.addEventListener('click', () => sendCommand(c.dataset.cmd)));
+
+document.querySelectorAll('.tab').forEach(t =>
+  t.addEventListener('click', () => switchTab(t.dataset.tab)));
+
+$('#refreshTools').addEventListener('click', fetchTools);
+$('#generateDrafts').addEventListener('click', generateDrafts);
+
+$('#exportDrafts').addEventListener('click', () => {
+  const payload = buildExportPayload();
+  if (!payload) { toast('No drafts to export', 'err'); return; }
+
+  const stamp = new Date().toISOString().slice(0, 10);
+  downloadText(`jarvis-drafts-${stamp}.txt`, payload.text);
+  toast(`✓ Exported ${payload.drafts.length} draft(s)`, 'ok');
+});
+
+$('#clearLogs').addEventListener('click', () => {
+  logStream.innerHTML = '';
+  logEvents = 0;
+  logCountEl.textContent = '0 EVENTS';
+});
+
+/* ─────────── Boot ─────────── */
+tickClock();
+setInterval(tickClock, 1000);
+autoResize();
+initMic();
+attachLogs();
+refreshHealth();
+setInterval(refreshHealth, 30000);
+fetchTools();
+
+console.log('%c JARVIS Web OS ', 'background:#22d3ee;color:#04121a;font:700 14px sans-serif;padding:4px 10px;border-radius:4px');
+</script>
+</body>
+</html>
