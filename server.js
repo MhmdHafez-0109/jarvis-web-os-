@@ -17,9 +17,10 @@ const HOST = '0.0.0.0'; // ضروري ليعمل على Render
    إعدادات GLM — تُقرأ من متغيرات البيئة على Render
    ══════════════════════════════════════════════════ */
 const CONFIG = {
-  GLM_API_KEY : process.env.GLM_API_KEY  || '',
-  GLM_BASE_URL: process.env.GLM_BASE_URL || 'https://integrate.api.nvidia.com/v1',
-  GLM_MODEL   : process.env.GLM_MODEL    || 'z-ai/glm-5.3',
+  GLM_API_KEY   : process.env.GLM_API_KEY  || '',
+  GLM_BASE_URL  : process.env.GLM_BASE_URL || 'https://integrate.api.nvidia.com/v1',
+  GLM_MODEL     : process.env.GLM_MODEL    || 'z-ai/glm-5.3',
+  GLM_TIMEOUT_MS: Number(process.env.GLM_TIMEOUT_MS || 60000),
 };
 
 const KEY_READY = CONFIG.GLM_API_KEY.length > 0;
@@ -33,22 +34,50 @@ const glmState = {
 };
 
 function providerError(err) {
+  const cause = err?.cause || err?.error?.cause || null;
+  const nestedCause = cause?.cause || null;
   const status = Number(err?.status) || null;
-  const code   = err?.code || err?.error?.code || null;
-  const raw    = String(err?.message || 'Unknown provider error');
+  const code =
+    err?.code ||
+    err?.error?.code ||
+    cause?.code ||
+    nestedCause?.code ||
+    null;
+  const raw = String(err?.message || cause?.message || 'Unknown provider error');
+
+  const network = cause ? {
+    name    : cause?.name || null,
+    code    : cause?.code || nestedCause?.code || null,
+    errno   : cause?.errno || nestedCause?.errno || null,
+    syscall : cause?.syscall || nestedCause?.syscall || null,
+    hostname: cause?.hostname || nestedCause?.hostname || null,
+    message : String(cause?.message || nestedCause?.message || '').slice(0, 500) || null,
+  } : null;
 
   let hint = 'Check provider status and request configuration.';
   if (status === 401) hint = 'Authentication failed: verify that the API key belongs to the configured provider.';
+  else if (status === 402) hint = 'Payment or trial credit is required for this request.';
   else if (status === 403) hint = 'The key is valid but does not have access to this model or endpoint.';
   else if (status === 404) hint = 'Model or endpoint not found: verify GLM_MODEL and GLM_BASE_URL.';
+  else if (status === 422) hint = 'The provider rejected one or more request parameters.';
   else if (status === 429) hint = 'Rate limit or quota exceeded: check credits and request limits.';
   else if (status && status >= 500) hint = 'The upstream AI provider returned a server error.';
+  else if (!status && ['ETIMEDOUT', 'UND_ERR_CONNECT_TIMEOUT'].includes(code)) {
+    hint = 'Connection to NVIDIA timed out before an HTTP response was received.';
+  } else if (!status && ['ENOTFOUND', 'EAI_AGAIN'].includes(code)) {
+    hint = 'DNS lookup failed while Render was trying to reach NVIDIA.';
+  } else if (!status && ['ECONNRESET', 'ECONNREFUSED'].includes(code)) {
+    hint = 'The network connection to NVIDIA was reset or refused.';
+  } else if (!status && raw.toLowerCase().includes('connection error')) {
+    hint = 'Render could not establish or maintain a network connection to the NVIDIA API. Check the network details field.';
+  }
 
   return {
     status,
     code,
     message: raw.slice(0, 500),
     hint,
+    network,
   };
 }
 
@@ -66,8 +95,10 @@ function markGlmError(err) {
 }
 
 const glm = new OpenAI({
-  apiKey : CONFIG.GLM_API_KEY || 'missing',
-  baseURL: CONFIG.GLM_BASE_URL,
+  apiKey    : CONFIG.GLM_API_KEY || 'missing',
+  baseURL   : CONFIG.GLM_BASE_URL,
+  timeout   : CONFIG.GLM_TIMEOUT_MS,
+  maxRetries: 2,
 });
 const SYSTEM_PROMPT = `You are JARVIS, the command intelligence of a futuristic web OS.
 Tone: precise, calm, slightly futuristic. Never break character.
@@ -101,10 +132,73 @@ app.get('/api/health', (_req, res) => {
     glm      : glmState.status,
     model    : CONFIG.GLM_MODEL,
     baseUrl  : CONFIG.GLM_BASE_URL,
+    timeoutMs: CONFIG.GLM_TIMEOUT_MS,
     checkedAt: glmState.checkedAt,
     lastError: glmState.lastError,
     timestamp: new Date().toISOString(),
   });
+});
+
+/* ─── اختبار مباشر وغير متدفق لاتصال NVIDIA/GLM ─── */
+app.get('/api/glm/test', async (_req, res) => {
+  if (!KEY_READY) {
+    return res.status(503).json({
+      ok: false,
+      error: 'GLM API key is not configured.',
+    });
+  }
+
+  const t0 = Date.now();
+
+  try {
+    const out = await glm.chat.completions.create({
+      model           : CONFIG.GLM_MODEL,
+      stream          : false,
+      temperature     : 0,
+      top_p           : 1,
+      max_tokens      : 32,
+      reasoning_effort: 'low',
+      messages        : [
+        { role: 'user', content: 'Reply with exactly: OK' },
+      ],
+    });
+
+    const text = out.choices?.[0]?.message?.content || '';
+    const ms = Date.now() - t0;
+
+    markGlmReady();
+    log('success', 'GLM', `Connectivity test passed in ${ms}ms`);
+
+    return res.json({
+      ok: true,
+      glm: 'ready',
+      model: CONFIG.GLM_MODEL,
+      latencyMs: ms,
+      response: text.slice(0, 100),
+      checkedAt: glmState.checkedAt,
+    });
+  } catch (err) {
+    const diag = markGlmError(err);
+    const ms = Date.now() - t0;
+
+    console.error('GLM CONNECTIVITY TEST ERROR:', {
+      ...diag,
+      stack: err?.stack,
+      cause: err?.cause,
+    });
+
+    log('error', 'GLM', `Connectivity test failed in ${ms}ms · ${diag.code || 'unknown'} · ${diag.message}`);
+
+    return res.status(diag.status && diag.status >= 400 && diag.status < 600 ? diag.status : 502).json({
+      ok: false,
+      glm: 'error',
+      model: CONFIG.GLM_MODEL,
+      baseUrl: CONFIG.GLM_BASE_URL,
+      latencyMs: ms,
+      error: diag,
+      checkedAt: glmState.checkedAt,
+    });
+  }
 });
 
 /* ─── بث السجلات المباشر ─── */
@@ -143,10 +237,13 @@ app.post('/api/jarvis/chat', async (req, res) => {
 
   try {
     const stream = await glm.chat.completions.create({
-      model      : CONFIG.GLM_MODEL,
-      stream     : true,
-      temperature: 0.7,
-      messages   : [
+      model           : CONFIG.GLM_MODEL,
+      stream          : true,
+      temperature     : 0.5,
+      top_p           : 1,
+      max_tokens      : 1024,
+      reasoning_effort: 'low',
+      messages        : [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user',   content: message },
       ],
@@ -242,9 +339,12 @@ app.post('/api/linkedin/draft', async (req, res) => {
 
   try {
     const out = await glm.chat.completions.create({
-      model: CONFIG.GLM_MODEL,
-      temperature: 0.85,
-      messages: [
+      model           : CONFIG.GLM_MODEL,
+      temperature     : 0.7,
+      top_p           : 1,
+      max_tokens      : 1800,
+      reasoning_effort: 'low',
+      messages        : [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content:
 `Write one LinkedIn post for EACH of the following AI tools:
