@@ -19,10 +19,51 @@ const HOST = '0.0.0.0'; // ضروري ليعمل على Render
 const CONFIG = {
   GLM_API_KEY : process.env.GLM_API_KEY  || '',
   GLM_BASE_URL: process.env.GLM_BASE_URL || 'https://integrate.api.nvidia.com/v1',
-  GLM_MODEL   : process.env.GLM_MODEL    || 'z-ai/glm-4.7',
+  GLM_MODEL   : process.env.GLM_MODEL    || 'z-ai/glm-5.3',
 };
 
 const KEY_READY = CONFIG.GLM_API_KEY.length > 0;
+
+// لا نعتبر وجود المفتاح وحده دليلاً على نجاح الاتصال.
+// تتحول الحالة إلى ready فقط بعد أول استجابة ناجحة من المزود.
+const glmState = {
+  status   : KEY_READY ? 'configured' : 'missing-key',
+  lastError: null,
+  checkedAt: null,
+};
+
+function providerError(err) {
+  const status = Number(err?.status) || null;
+  const code   = err?.code || err?.error?.code || null;
+  const raw    = String(err?.message || 'Unknown provider error');
+
+  let hint = 'Check provider status and request configuration.';
+  if (status === 401) hint = 'Authentication failed: verify that the API key belongs to the configured provider.';
+  else if (status === 403) hint = 'The key is valid but does not have access to this model or endpoint.';
+  else if (status === 404) hint = 'Model or endpoint not found: verify GLM_MODEL and GLM_BASE_URL.';
+  else if (status === 429) hint = 'Rate limit or quota exceeded: check credits and request limits.';
+  else if (status && status >= 500) hint = 'The upstream AI provider returned a server error.';
+
+  return {
+    status,
+    code,
+    message: raw.slice(0, 500),
+    hint,
+  };
+}
+
+function markGlmReady() {
+  glmState.status = 'ready';
+  glmState.lastError = null;
+  glmState.checkedAt = new Date().toISOString();
+}
+
+function markGlmError(err) {
+  glmState.status = 'error';
+  glmState.lastError = providerError(err);
+  glmState.checkedAt = new Date().toISOString();
+  return glmState.lastError;
+}
 
 const glm = new OpenAI({
   apiKey : CONFIG.GLM_API_KEY || 'missing',
@@ -57,8 +98,11 @@ app.get('/api/health', (_req, res) => {
   res.json({
     status   : 'ok',
     core     : 'online',
-    glm      : KEY_READY ? 'ready' : 'missing-key',
+    glm      : glmState.status,
     model    : CONFIG.GLM_MODEL,
+    baseUrl  : CONFIG.GLM_BASE_URL,
+    checkedAt: glmState.checkedAt,
+    lastError: glmState.lastError,
     timestamp: new Date().toISOString(),
   });
 });
@@ -118,12 +162,21 @@ app.post('/api/jarvis/chat', async (req, res) => {
     }
 
     const ms = Date.now() - t0;
+    markGlmReady();
     send({ type: 'done', ms });
     log('success', 'GLM', `Complete in ${ms}ms · ${full.length} chars`);
     res.end();
   } catch (err) {
-    log('error', 'GLM', `Stream failed: ${err.message}`);
-    send({ type: 'error', message: err.message });
+    const diag = markGlmError(err);
+    console.error('GLM ERROR:', diag);
+    log('error', 'GLM', `HTTP ${diag.status || '?'} · ${diag.code || 'unknown'} · ${diag.message}`);
+    send({
+      type: 'error',
+      message: diag.message,
+      status : diag.status,
+      code   : diag.code,
+      hint   : diag.hint,
+    });
     res.end();
   }
 });
@@ -207,11 +260,19 @@ Return STRICT JSON only — no prose, no code fences:
     const drafts = Array.isArray(parsed?.drafts) ? parsed.drafts : [];
     if (!drafts.length) throw new Error('Model returned no parsable drafts');
 
+    markGlmReady();
     log('success', 'AGENT', `Generated ${drafts.length} draft(s).`);
     res.json({ ok: true, count: drafts.length, drafts });
   } catch (err) {
-    log('error', 'AGENT', `Draft generation failed: ${err.message}`);
-    res.status(500).json({ error: err.message });
+    const diag = markGlmError(err);
+    console.error('GLM DRAFT ERROR:', diag);
+    log('error', 'AGENT', `Draft generation failed · HTTP ${diag.status || '?'} · ${diag.message}`);
+    res.status(diag.status && diag.status >= 400 && diag.status < 600 ? diag.status : 500).json({
+      error : diag.message,
+      status: diag.status,
+      code  : diag.code,
+      hint  : diag.hint,
+    });
   }
 });
 
@@ -239,6 +300,8 @@ app.post('/api/linkedin/post', async (req, res) => {
 app.listen(PORT, HOST, () => {
   console.log(`\n  JARVIS Web OS running on http://${HOST}:${PORT}`);
   log('info', 'CORE', `Server online on port ${PORT}.`);
-  log(KEY_READY ? 'success' : 'warn', 'GLM',
-      KEY_READY ? `Connected · ${CONFIG.GLM_MODEL}` : 'API key missing');
+  log(KEY_READY ? 'info' : 'warn', 'GLM',
+      KEY_READY
+        ? `Configured · ${CONFIG.GLM_MODEL} · awaiting first successful provider response`
+        : 'API key missing');
 });
